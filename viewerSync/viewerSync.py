@@ -66,23 +66,24 @@ __all__ = [
 # =============================================================================
 
 
-def sync_viewers():
-    try:
-        active_view = nuke.activeViewer()
-        active_view_node = active_view.node()
-        active_view_input = active_view.activeInput()
+def sync_viewers(viewers):
 
-        current_node = active_view_node.input(active_view_input)
+    # Grab our active viewer's node & input.
+    active_view_node = nuke.activeViewer().node()
+    active_view_input = nuke.activeViewer().activeInput()
+    current_node = active_view_node.input(active_view_input)
 
-        if active_view_node['name'].value() == 'Viewer1Sync':
-            viewer_to_sync = nuke.toNode('Viewer1')
-        else:
-            viewer_to_sync = nuke.toNode('Viewer1Sync')
+    # Grab our viewer nodes
+    viewer_nodes = [nuke.toNode(viewer) for viewer in viewers]
 
-        viewer_to_sync.setInput(0, current_node)
-        viewer_to_sync.setInput(active_view_input, current_node)
-    except:  # TODO: Determine specific exceptions
-        print 'No valid viewer.'
+    # Remove our active viewer from the nodes to update.
+    if active_view_node in viewer_nodes:
+        viewer_nodes.pop(active_view_node)
+
+    # Update remaining viewers to point at our current node.
+    for viewer in viewer_nodes:
+        viewer.setInput(0, current_node)
+        viewer.setInput(active_view_input, current_node)
 
 # =============================================================================
 
