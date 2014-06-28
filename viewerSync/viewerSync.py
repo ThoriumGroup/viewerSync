@@ -91,8 +91,15 @@ def sync_viewers(viewers):
 
     caller = nuke.thisNode()
 
-    # Grab our viewer nodes
-    viewer_nodes = [nuke.toNode(viewer) for viewer in viewers]
+    # Grab our viewer nodes and remove any that have been deleted.
+    viewer_nodes = [
+        nuke.toNode(viewer) for viewer in viewers if nuke.toNode(viewer)
+    ]
+    if not viewer_nodes:
+        # All linked viewers have been deleted.
+        # We should remove the callback.
+        caller['knobChanged'].setValue('')
+        return
 
     # Remove our active viewer from the nodes to update.
     if caller in viewer_nodes:
@@ -147,7 +154,12 @@ def toggle():
             callback = viewer['knobChanged'].value()
             if callback:
                 callback = callback.replace('viewerSync.sync_viewers(', '')[:-1]
-                remove_viewers.extend(literal_eval(callback))
+                linked_viewers = literal_eval(callback)
+                linked_viewers = [
+                    nuke.toNode(name) for name in linked_viewers
+                    if nuke.toNode(name)
+                ]
+                remove_viewers.extend(linked_viewers)
 
     if remove_viewers:
         for viewer_name in set(remove_viewers):
