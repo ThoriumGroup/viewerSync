@@ -4,16 +4,19 @@
 import nuke
 
 def viewerSync() :
-    av = nuke.activeViewer()
-    avn = av.node()
-    avi = av.activeInput()
-    curN = avn.input(avi)
-    if avn['name'].value() == 'Viewer1Sync' :
-        vSync = nuke.toNode('Viewer1')
-    else :
-        vSync = nuke.toNode('Viewer1Sync')
-    vSync.setInput( 0, curN )
-    vSync.setInput( avi, curN )
+    try :
+        av = nuke.activeViewer()
+        avn = av.node()
+        avi = av.activeInput()
+        curN = avn.input(avi)
+        if avn['name'].value() == 'Viewer1Sync' :
+            vSync = nuke.toNode('Viewer1')
+        else :
+            vSync = nuke.toNode('Viewer1Sync')
+        vSync.setInput( 0, curN )
+        vSync.setInput( avi, curN )
+    except :
+        print 'no valid viewer'
     
 def viewerSyncCBs() :
     vSync = nuke.toNode('Viewer1')
