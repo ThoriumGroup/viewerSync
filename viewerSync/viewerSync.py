@@ -89,6 +89,12 @@ def sync_viewers(viewers):
         'viewerProcess'
     ]
 
+    # Kick back if it's not a knob we care about.
+    if nuke.thisKnob().name() not in (
+        sync_knobs + ['inputChange', 'knobChanged']
+    ):
+        return
+
     caller = nuke.thisNode()
 
     # Grab our viewer nodes and remove any that have been deleted.
