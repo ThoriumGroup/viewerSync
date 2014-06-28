@@ -68,7 +68,7 @@ __all__ = [
 
 def sync_viewers(viewers):
 
-    nuke.tprint(nuke.thisKnob().fullname())
+    nuke.tprint(nuke.thisKnob().name())
 
     # Grab our active viewer's node & input.
     active_view_node = nuke.activeViewer().node()
@@ -129,7 +129,7 @@ def toggle():
                 viewer['knobChanged'].setValue('')
             else:
                 # We need a list of viewer names to link this node with.
-                viewer_names = [node.fullname() for node in viewers]
+                viewer_names = [node.fullName() for node in viewers]
                 viewer['knobChanged'].setValue(
                     'viewerSync.sync_viewers({viewers})'.format(
                         viewers=viewer_names
