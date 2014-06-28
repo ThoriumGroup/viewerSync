@@ -69,6 +69,24 @@ __all__ = [
 # =============================================================================
 
 
+def _extract_viewer_list(viewer):
+    """Extracts a list of Viewer nodes from a callback"""
+    callback = viewer['knobChanged'].value()
+
+    if not callback:
+        return []
+
+    callback = callback.replace('viewerSync.sync_viewers(', '')[:-1]
+    linked_viewers = literal_eval(callback)
+    viewer_nodes = [
+        nuke.toNode(node) for node in linked_viewers if nuke.toNode(node)
+    ]
+
+    return viewer_nodes
+
+# =============================================================================
+
+
 def _set_callback(node, viewers, knobs=None):
     """Sets the callback on the node with the viewers and knobs args"""
     # Remove our caller from the nodes to update if present.
@@ -86,6 +104,25 @@ def _set_callback(node, viewers, knobs=None):
 
 # =============================================================================
 # PUBLIC FUNCTIONS
+# =============================================================================
+
+
+def remove_callbacks():
+    """Removes callback from all selected viewers and all viewers linked."""
+    viewers = nuke.selectedNodes('Viewer')
+    extra_viewers = []
+    for viewer in viewers:
+        linked_viewers = _extract_viewer_list(viewer)
+        extra_viewers.extend(linked_viewers)
+
+    viewers.extend(extra_viewers)
+
+    if not viewers:
+        viewers = nuke.allNodes('Viewer')
+
+    for viewer in viewers:
+        viewer['knobChanged'].setValue('')
+
 # =============================================================================
 
 
@@ -177,15 +214,8 @@ def toggle():
 
     for viewers in viewer_levels.values():
         for viewer in viewers:
-            callback = viewer['knobChanged'].value()
-            if callback:
-                callback = callback.replace('viewerSync.sync_viewers(', '')[:-1]
-                linked_viewers = literal_eval(callback)
-                linked_viewers = [
-                    nuke.toNode(name) for name in linked_viewers
-                    if nuke.toNode(name)
-                ]
-                remove_viewers.extend(linked_viewers)
+            linked_viewers = _extract_viewer_list(viewer)
+            remove_viewers.extend(linked_viewers)
 
     if remove_viewers:
         for viewer_name in set(remove_viewers):
