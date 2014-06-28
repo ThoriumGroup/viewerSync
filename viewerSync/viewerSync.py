@@ -68,6 +68,8 @@ __all__ = [
 
 def sync_viewers(viewers):
 
+    nuke.tprint(nuke.thisKnob().fullname())
+
     # Grab our active viewer's node & input.
     active_view_node = nuke.activeViewer().node()
     active_view_input = nuke.activeViewer().activeInput()
