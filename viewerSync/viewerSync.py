@@ -71,11 +71,31 @@ __all__ = [
 
 
 def _extract_viewer_list(viewer):
-    """Extracts a list of Viewer nodes from a callback"""
+    """Extracts a list of Viewer nodes from a callback.
+
+    Searches a viewer node for a viewerSync callback, and extracts the
+    value of the `viewers` arg.
+
+    Args:
+        viewer : (<nuke.nodes.Viewer>)
+            The viewer node with the callback attached.
+
+    Returns:
+        [<nuke.nodes.Viewer>]
+            A list of viewer nodes that were listed in the callback arg.
+
+    Raises:
+        ValueError
+            If the callback found on the viewer is present, but not for
+            viewerSync.
+
+    """
     callback = viewer['knobChanged'].value()
 
     if not callback:
         return []
+    elif 'viewerSync' not in callback:
+        raise ValueError("Not a viewerSync'd viewer.")
 
     callback = callback.replace('viewerSync.sync_viewers(', '')[:-1]
     linked_viewers = literal_eval(callback)
