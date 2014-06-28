@@ -46,6 +46,9 @@ SOFTWARE.
 # IMPORTS
 # =============================================================================
 
+# Standard Imports
+from ast import literal_eval
+
 # Nuke Imports
 try:
     import nuke
@@ -116,8 +119,9 @@ def toggle():
     viewer_levels = {}
 
     # If we find ANY viewers of the currently selected set having a
-    # knobChanged value, we'll turn them all off. Safer this way.
-    remove = False
+    # knobChanged value, we'll turn off syncing on all the node's it's linked
+    # to. Safer that way.
+    remove_viewers = []
 
     if viewers:
         for viewer in viewers:
@@ -140,18 +144,22 @@ def toggle():
 
     for viewers in viewer_levels.values():
         for viewer in viewers:
-            if viewer['knobChanged'].value():
-                remove = True
+            callback = viewer['knobChanged'].value()
+            if callback:
+                callback = callback.replace('viewerSync.sync_viewers(', '')[:-1]
+                remove_viewers.extend(literal_eval(callback))
+
+    if remove_viewers:
+        for viewer_name in set(remove_viewers):
+            viewer = nuke.toNode(viewer_name)
+            viewer['knobChanged'].setValue('')
 
     for viewers in viewer_levels.values():
         for viewer in viewers:
-            if remove:
-                viewer['knobChanged'].setValue('')
-            else:
-                # We need a list of viewer names to link this node with.
-                viewer_names = [node.fullName() for node in viewers]
-                viewer['knobChanged'].setValue(
-                    'viewerSync.sync_viewers({viewers})'.format(
-                        viewers=viewer_names
-                    )
+            # We need a list of viewer names to link this node with.
+            viewer_names = [node.fullName() for node in viewers]
+            viewer['knobChanged'].setValue(
+                'viewerSync.sync_viewers({viewers})'.format(
+                    viewers=viewer_names
                 )
+            )
