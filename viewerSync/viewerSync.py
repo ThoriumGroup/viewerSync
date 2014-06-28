@@ -8,6 +8,13 @@ Contains the functions required for two views to be kept in sync.
 
 ## Public Functions
 
+    sync_viewers()
+        Syncs the inputs of one or more viewers to match the input list
+        of the calling node.
+
+    toggle()
+        Toggles the callback args of selected viewers or all viewers in root.
+
 ## License
 
 The MIT License (MIT)
@@ -50,6 +57,8 @@ except ImportError:
 # =============================================================================
 
 __all__ = [
+    'sync_viewers',
+    'toggle',
 ]
 
 # =============================================================================
@@ -87,6 +96,56 @@ def add_callback():
 
     viewer2 = nuke.toNode('Viewer1Sync')
     viewer2['knobChanged'].setValue('viewer_sync.sync_viewers()')
+
+# =============================================================================
+
+
+def toggle():
+    # Grab all of our currently selected Viewer nodes:
+    viewers = nuke.selectedNodes('Viewer')
+
+    # We'll be using the viewer_levels dictionary to link viewers
+    # across the same DAG level, and avoid linking lone viewers on sub DAGs.
+    viewer_levels = {}
+
+    # If we find ANY viewers of the currently selected set having a
+    # knobChanged value, we'll turn them all off. Safer this way.
+    remove = False
+
+    if viewers:
+        for viewer in viewers:
+            group = '.'.join(viewer.fullname().split('.')[:-1])
+            group_viewers = viewer_levels.get(group, [])
+            group_viewers.append(viewer)
+    else:
+        # No viewers were provided, so we'll just grab all the viewers
+        # at our current level
+        viewers = nuke.allNodes('Viewer')
+        viewer_levels['group'] = viewers
+
+    for level in viewer_levels.keys():
+        if len(viewer_levels[level]) <= 1:
+            # Nothing to sync, delete this level.
+            del viewer_levels[level]
+
+    for viewers in viewer_levels.values():
+        for viewer in viewers:
+            if viewer['knobChanged'].value():
+                remove = True
+
+    for viewers in viewer_levels.values():
+        for viewer in viewers:
+            if remove:
+                viewer['knobChanged'].setValue('')
+            else:
+                # We need a list of viewer names to link this node with.
+                viewer_names = [node.fullname() for node in viewers]
+                viewer['knobChanged'].setValue(
+                    'viewerSync.sync_viewers({viewers})'.format(
+                        viewers=viewer_names
+                    )
+                )
+
 
 # =============================================================================
 
