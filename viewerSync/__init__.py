@@ -2,10 +2,9 @@
 """
 
 Viewer Sync
-==========
+===========
 
 Synchronizes two or more viewers in Nuke so that they always show the same node.
-
 
 ## Usage
 

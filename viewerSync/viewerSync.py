@@ -2,7 +2,7 @@
 """
 
 Viewer Sync
-==========
+===========
 
 Contains the functions required for two views to be kept in sync.
 
