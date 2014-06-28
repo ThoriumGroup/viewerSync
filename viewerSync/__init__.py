@@ -134,13 +134,14 @@ def _get_menu_item_index(menu, item):
 # ==============================================================================
 
 
-def run(menu='User', hotkey='Shift+j', submenu=None, submenu_index=None,
-        item_index=None):
+def run(menu='Viewer', hotkey='Shift+j', submenu=None, submenu_index=None,
+        item_index=-1):
     """Adds viewerSync menu items.
 
     Args:
-        menu='User' : (str)
-            Top menu to add viewerSync under.
+        menu='Viewer' : (str)
+            Top menu to add viewerSync under. Defaults to adding it under
+            the built in 'Viewer' menu.
 
         submenu=None : (str)
             Submenu to add viewerSync under. If no submenu desired, giving
@@ -153,10 +154,10 @@ def run(menu='User', hotkey='Shift+j', submenu=None, submenu_index=None,
                 what the index would be assuming menu was already
                 alphabetically sorted.
 
-        item_index=None : (int)
+        item_index=-1 : (int)
             Position of viewerSync toggle command within the submenu.
 
-            Default: Will parse submenu, sort items alphabetically to
+            If given `None`, will parse submenu, sort items alphabetically to
             determine what the index would be assuming submenu was already
             alphabetically sorted.
 
