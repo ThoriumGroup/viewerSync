@@ -14,16 +14,17 @@ Synchronizes two or more viewers in Nuke so that they always show the same node.
 Usage
 -----
 
-Synchronizing viewers in nuke is as easy as hitting `Shift-j` with two or more
+Synchronizing viewers in nuke is as easy as hitting `j` with two or more
 viewers selected. If no viewers are selected, all viewers on the root node
 graph level are synchronized.
 
 From that point on, whenever you switch an input on one viewer, the other
 viewers will switch to the same input.
 
-A viewer can only belong to one group at a time. Anytime a selection contains
-a viewer node that already belongs to a group, all synchronization will be
-removed from the selected nodes.
+To remove the synchronization from nodes, select the nodes you wish to remove
+synchronization from, and hit `Shift-j`. If no nodes are selected, all the
+viewers found on the root node graph level are de-synced. Note that any viewers
+that are in the same group
 
 Installation
 ------------

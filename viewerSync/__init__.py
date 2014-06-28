@@ -8,12 +8,17 @@ Synchronizes two or more viewers in Nuke so that they always show the same node.
 
 ## Usage
 
-Synchronizing viewers in nuke is as easy as hitting `Shift-j` with two or more
+Synchronizing viewers in nuke is as easy as hitting `j` with two or more
 viewers selected. If no viewers are selected, all viewers on the root node
 graph level are synchronized.
 
 From that point on, whenever you switch an input on one viewer, the other
 viewers will switch to the same input.
+
+To remove the synchronization from nodes, select the nodes you wish to remove
+synchronization from, and hit `Shift-j`. If no nodes are selected, all the
+viewers found on the root node graph level are de-synced. Note that any viewers
+that are in the same group
 
 ## Installation
 
@@ -70,7 +75,7 @@ except ImportError:
     pass
 
 # viewerSync Imports
-from .viewerSync import sync_viewers, toggle
+from .viewerSync import remove_callbacks, setup_sync, sync_viewers
 
 # ==============================================================================
 # GLOBALS
@@ -94,9 +99,10 @@ __url__ = "http://github.com/ThoriumGroup/viewerSync"
 # ==============================================================================
 
 __all__ = [
+    'remove_callbacks',
     'run',
+    'setup_sync',
     'sync_viewers',
-    'toggle',
 ]
 
 # ==============================================================================
@@ -134,7 +140,7 @@ def _get_menu_item_index(menu, item):
 # ==============================================================================
 
 
-def run(menu='Viewer', hotkey='Shift+j', submenu=None, submenu_index=None,
+def run(menu='Viewer', hotkey='j', submenu=None, submenu_index=None,
         item_index=-1):
     """Adds viewerSync menu items.
 
@@ -142,6 +148,9 @@ def run(menu='Viewer', hotkey='Shift+j', submenu=None, submenu_index=None,
         menu='Viewer' : (str)
             Top menu to add viewerSync under. Defaults to adding it under
             the built in 'Viewer' menu.
+
+        hotkey='j' : (str)
+            The hotkey to trigger viewerSync.
 
         submenu=None : (str)
             Submenu to add viewerSync under. If no submenu desired, giving
@@ -188,9 +197,17 @@ def run(menu='Viewer', hotkey='Shift+j', submenu=None, submenu_index=None,
         dest_menu = top_level_menu
 
     dest_menu.addCommand(
-        'Toggle Viewer Sync',
+        'Create Viewer Sync',
         'viewerSync.toggle()',
         hotkey,
         index=item_index if item_index is not None else
-        _get_menu_item_index(dest_menu, 'Toggle Viewer Sync')
+        _get_menu_item_index(dest_menu, 'Create Viewer Sync')
+    )
+
+    dest_menu.addCommand(
+        'Remove Viewer Sync',
+        'viewerSync.remove_callbacks()',
+        'Shift+' + hotkey,
+        index=item_index if item_index is not None else
+        _get_menu_item_index(dest_menu, 'Remove Viewer Sync')
     )
