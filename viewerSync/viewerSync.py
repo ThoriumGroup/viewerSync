@@ -57,7 +57,7 @@ __all__ = [
 # =============================================================================
 
 
-def viewer_sync():
+def sync_viewers():
     try:
         active_view = nuke.activeViewer()
         active_view_node = active_view.node()
@@ -65,7 +65,7 @@ def viewer_sync():
 
         current_node = active_view_node.input(active_view_input)
 
-        if active_view_node['name'].value() == 'Viewer1Sync' :
+        if active_view_node['name'].value() == 'Viewer1Sync':
             viewer_to_sync = nuke.toNode('Viewer1')
         else:
             viewer_to_sync = nuke.toNode('Viewer1Sync')
@@ -78,20 +78,20 @@ def viewer_sync():
 # =============================================================================
 
 
-def viewer_sync_callback():
+def add_callback():
     viewer1 = nuke.toNode('Viewer1')
-    viewer1['knobChanged'].setValue('viewer_sync.viewer_sync()')
+    viewer1['knobChanged'].setValue('viewerSync.sync_viewers()')
 
     if not nuke.toNode('Viewer1Sync'):
         nuke.nodes.Viewer(name='Viewer1Sync')
 
     viewer2 = nuke.toNode('Viewer1Sync')
-    viewer2['knobChanged'].setValue('viewer_sync.viewer_sync()')
+    viewer2['knobChanged'].setValue('viewer_sync.sync_viewers()')
 
 # =============================================================================
 
 
-def viewer_sync_off():
+def remove_callback():
     viewer1 = nuke.toNode('Viewer1')
     viewer1['knobChanged'].setValue('')
 
