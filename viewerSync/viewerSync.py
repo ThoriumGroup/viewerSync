@@ -70,56 +70,39 @@ def sync_viewers(viewers):
 
     sync_knobs = [
         'channels',
-        'downrez',
-        'viewerProcess',
-        'roi',
+        'cliptest',
+        'downrez',  # Proxy Mode
+        'fps',
         'gain',
         'gamma',
-        'masking_mode',
-        'safe_zone',
+        'input_number',  # What input we're looking at
         'input_process',
         'input_process_node',
-        'cliptest'
+        'masking_mode',
+        'masking_ratio',
+        'rgb_only',
+        'roi',  # Doesn't work 100% yet.
+        'safe_zone',
+        'viewerProcess'
     ]
 
-    # Grab our active viewer's node & input.
-    try:
-        active_view_node = nuke.activeViewer().node()
-    except AttributeError:
-        # No active viewer
-        return
-    active_view_input = nuke.activeViewer().activeInput()
-    if not active_view_input:
-        # Nothing is hooked up yet
-        return
+    caller = nuke.thisNode()
 
     # Grab our viewer nodes
     viewer_nodes = [nuke.toNode(viewer) for viewer in viewers]
 
     # Remove our active viewer from the nodes to update.
-    if active_view_node in viewer_nodes:
-        viewer_nodes.pop(viewer_nodes.index(active_view_node))
+    if caller in viewer_nodes:
+        viewer_nodes.pop(viewer_nodes.index(caller))
 
     # Update remaining viewers to point at our current node.
-    # Other possible syncing knobs:
-    # channels
-    # downrez
-    # viewerProcess
-    # roi
-    # gain
-    # gamma
-    # masking_mode
-    # safe_zone
-    # input_process
-    # input_process_node
-    # cliptest
     for viewer in viewer_nodes:
         #viewer.setInput(0, current_node)
         #viewer.setInput(active_view_input, current_node)
-        for i in xrange(active_view_node.inputs()):
-            viewer.setInput(i, active_view_node.input(i))
+        for i in xrange(caller.inputs()):
+            viewer.setInput(i, caller.input(i))
         for knob in sync_knobs:
-            viewer[knob].setValue(active_view_node[knob].value())
+            viewer[knob].setValue(caller[knob].value())
 
 # =============================================================================
 
