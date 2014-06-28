@@ -69,6 +69,26 @@ __all__ = [
 # =============================================================================
 
 
+def _set_callback(node, viewers, knobs=None):
+    """Sets the callback on the node with the viewers and knobs args"""
+    # Remove our caller from the nodes to update if present.
+    if node in viewers:
+        viewers.pop(viewers.index(node))
+
+    # Get the list of node names to populate the arg with
+    viewer_names = [viewer.fullName() for viewer in viewers]
+
+    node['knobChanged'].setValue(
+        'viewerSync.sync_viewers({viewers})'.format(
+            viewers=viewer_names
+        )
+    )
+
+# =============================================================================
+# PUBLIC FUNCTIONS
+# =============================================================================
+
+
 def sync_viewers(viewers):
 
     sync_knobs = [
@@ -101,15 +121,15 @@ def sync_viewers(viewers):
     viewer_nodes = [
         nuke.toNode(viewer) for viewer in viewers if nuke.toNode(viewer)
     ]
-    if not viewer_nodes:
+
+    if len(viewer_nodes) != len(viewers):
+        # Some or all of the linked viewer nodes have been deleted.
+        _set_callback(caller, viewer_nodes)
+    elif not viewer_nodes:
         # All linked viewers have been deleted.
         # We should remove the callback.
         caller['knobChanged'].setValue('')
         return
-
-    # Remove our active viewer from the nodes to update.
-    if caller in viewer_nodes:
-        viewer_nodes.pop(viewer_nodes.index(caller))
 
     # Update remaining viewers to point at our current node.
     for viewer in viewer_nodes:
@@ -174,10 +194,4 @@ def toggle():
 
     for viewers in viewer_levels.values():
         for viewer in viewers:
-            # We need a list of viewer names to link this node with.
-            viewer_names = [node.fullName() for node in viewers]
-            viewer['knobChanged'].setValue(
-                'viewerSync.sync_viewers({viewers})'.format(
-                    viewers=viewer_names
-                )
-            )
+            _set_callback(viewer, viewers)
