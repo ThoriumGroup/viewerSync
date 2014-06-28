@@ -122,8 +122,11 @@ def toggle():
     if viewers:
         for viewer in viewers:
             group = '.'.join(viewer.fullName().split('.')[:-1])
+            if not group:
+                group = 'root'
             group_viewers = viewer_levels.get(group, [])
             group_viewers.append(viewer)
+            viewer_levels[group] = group_viewers
     else:
         # No viewers were provided, so we'll just grab all the viewers
         # at our current level
