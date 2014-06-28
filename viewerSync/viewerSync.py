@@ -68,24 +68,58 @@ __all__ = [
 
 def sync_viewers(viewers):
 
-    nuke.tprint(nuke.thisKnob().name())
+    sync_knobs = [
+        'channels',
+        'downrez',
+        'viewerProcess',
+        'roi',
+        'gain',
+        'gamma',
+        'masking_mode',
+        'safe_zone',
+        'input_process',
+        'input_process_node',
+        'cliptest'
+    ]
 
     # Grab our active viewer's node & input.
-    active_view_node = nuke.activeViewer().node()
+    try:
+        active_view_node = nuke.activeViewer().node()
+    except AttributeError:
+        # No active viewer
+        return
     active_view_input = nuke.activeViewer().activeInput()
-    current_node = active_view_node.input(active_view_input)
+    if not active_view_input:
+        # Nothing is hooked up yet
+        return
 
     # Grab our viewer nodes
     viewer_nodes = [nuke.toNode(viewer) for viewer in viewers]
 
     # Remove our active viewer from the nodes to update.
     if active_view_node in viewer_nodes:
-        viewer_nodes.pop(active_view_node)
+        viewer_nodes.pop(viewer_nodes.index(active_view_node))
 
     # Update remaining viewers to point at our current node.
+    # Other possible syncing knobs:
+    # channels
+    # downrez
+    # viewerProcess
+    # roi
+    # gain
+    # gamma
+    # masking_mode
+    # safe_zone
+    # input_process
+    # input_process_node
+    # cliptest
     for viewer in viewer_nodes:
-        viewer.setInput(0, current_node)
-        viewer.setInput(active_view_input, current_node)
+        #viewer.setInput(0, current_node)
+        #viewer.setInput(active_view_input, current_node)
+        for i in xrange(active_view_node.inputs()):
+            viewer.setInput(i, active_view_node.input(i))
+        for knob in sync_knobs:
+            viewer[knob].setValue(active_view_node[knob].value())
 
 # =============================================================================
 
@@ -104,7 +138,7 @@ def toggle():
 
     if viewers:
         for viewer in viewers:
-            group = '.'.join(viewer.fullname().split('.')[:-1])
+            group = '.'.join(viewer.fullName().split('.')[:-1])
             group_viewers = viewer_levels.get(group, [])
             group_viewers.append(viewer)
     else:
