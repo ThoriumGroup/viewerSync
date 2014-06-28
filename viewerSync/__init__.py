@@ -37,7 +37,7 @@ Hotkey can be set with the `hotkey` argument, which defaults to `Shift+j`.
 
 The MIT License (MIT)
 
-iconPanel
+viewerSync
 Copyright (c) 2011-2012 Philippe Huberdeau
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
