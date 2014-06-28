@@ -60,8 +60,9 @@ except ImportError:
 # =============================================================================
 
 __all__ = [
+    'remove_callbacks',
+    'setup_sync',
     'sync_viewers',
-    'toggle',
 ]
 
 # =============================================================================
@@ -126,6 +127,55 @@ def remove_callbacks():
 # =============================================================================
 
 
+def setup_sync():
+    # Grab all of our currently selected Viewer nodes:
+    viewers = nuke.selectedNodes('Viewer')
+
+    # We'll be using the viewer_levels dictionary to link viewers
+    # across the same DAG level, and avoid linking lone viewers on sub DAGs.
+    viewer_levels = {}
+
+    # If we find ANY viewers of the currently selected set having a
+    # knobChanged value, we'll turn off syncing on all the node's it's linked
+    # to. Safer that way.
+    remove_viewers = []
+
+    if viewers:
+        for viewer in viewers:
+            group = '.'.join(viewer.fullName().split('.')[:-1])
+            if not group:
+                group = 'root'
+            group_viewers = viewer_levels.get(group, [])
+            group_viewers.append(viewer)
+            viewer_levels[group] = group_viewers
+    else:
+        # No viewers were provided, so we'll just grab all the viewers
+        # at our current level
+        viewers = nuke.allNodes('Viewer')
+        viewer_levels['group'] = viewers
+
+    for level in viewer_levels.keys():
+        if len(viewer_levels[level]) <= 1:
+            # Nothing to sync, delete this level.
+            del viewer_levels[level]
+
+    for viewers in viewer_levels.values():
+        for viewer in viewers:
+            linked_viewers = _extract_viewer_list(viewer)
+            remove_viewers.extend(linked_viewers)
+
+    if remove_viewers:
+        for viewer_name in set(remove_viewers):
+            viewer = nuke.toNode(viewer_name)
+            viewer['knobChanged'].setValue('')
+
+    for viewers in viewer_levels.values():
+        for viewer in viewers:
+            _set_callback(viewer, viewers)
+
+# =============================================================================
+
+
 def sync_viewers(viewers):
 
     sync_knobs = [
@@ -176,52 +226,3 @@ def sync_viewers(viewers):
             viewer.setInput(i, caller.input(i))
         for knob in sync_knobs:
             viewer[knob].setValue(caller[knob].value())
-
-# =============================================================================
-
-
-def toggle():
-    # Grab all of our currently selected Viewer nodes:
-    viewers = nuke.selectedNodes('Viewer')
-
-    # We'll be using the viewer_levels dictionary to link viewers
-    # across the same DAG level, and avoid linking lone viewers on sub DAGs.
-    viewer_levels = {}
-
-    # If we find ANY viewers of the currently selected set having a
-    # knobChanged value, we'll turn off syncing on all the node's it's linked
-    # to. Safer that way.
-    remove_viewers = []
-
-    if viewers:
-        for viewer in viewers:
-            group = '.'.join(viewer.fullName().split('.')[:-1])
-            if not group:
-                group = 'root'
-            group_viewers = viewer_levels.get(group, [])
-            group_viewers.append(viewer)
-            viewer_levels[group] = group_viewers
-    else:
-        # No viewers were provided, so we'll just grab all the viewers
-        # at our current level
-        viewers = nuke.allNodes('Viewer')
-        viewer_levels['group'] = viewers
-
-    for level in viewer_levels.keys():
-        if len(viewer_levels[level]) <= 1:
-            # Nothing to sync, delete this level.
-            del viewer_levels[level]
-
-    for viewers in viewer_levels.values():
-        for viewer in viewers:
-            linked_viewers = _extract_viewer_list(viewer)
-            remove_viewers.extend(linked_viewers)
-
-    if remove_viewers:
-        for viewer_name in set(remove_viewers):
-            viewer = nuke.toNode(viewer_name)
-            viewer['knobChanged'].setValue('')
-
-    for viewers in viewer_levels.values():
-        for viewer in viewers:
-            _set_callback(viewer, viewers)
