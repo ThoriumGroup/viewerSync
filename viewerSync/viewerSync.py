@@ -131,10 +131,15 @@ def _set_callback(node, viewers, knobs=None):
 def remove_callbacks():
     """Removes callback from all selected viewers and all viewers linked."""
     viewers = nuke.selectedNodes('Viewer')
-    extra_viewers = []
+    extra_viewers = []  # Viewers that weren't in the selected group.
+    bad_viewers = []  # Viewers who have a callback other than viewerSync.
     for viewer in viewers:
-        linked_viewers = _extract_viewer_list(viewer)
-        extra_viewers.extend(linked_viewers)
+        try:
+            linked_viewers = _extract_viewer_list(viewer)
+        except ValueError:
+            bad_viewers.append(viewer)
+        else:
+            extra_viewers.extend(linked_viewers)
 
     viewers.extend(extra_viewers)
 
@@ -179,10 +184,16 @@ def setup_sync():
             # Nothing to sync, delete this level.
             del viewer_levels[level]
 
+    bad_viewers = []  # List of viewers that have foreign callbacks
+
     for viewers in viewer_levels.values():
         for viewer in viewers:
-            linked_viewers = _extract_viewer_list(viewer)
-            remove_viewers.extend(linked_viewers)
+            try:
+                linked_viewers = _extract_viewer_list(viewer)
+            except ValueError:
+                bad_viewers.append(viewer)
+            else:
+                remove_viewers.extend(linked_viewers)
 
     if remove_viewers:
         for viewer_name in set(remove_viewers):
@@ -190,6 +201,9 @@ def setup_sync():
             viewer['knobChanged'].setValue('')
 
     for viewers in viewer_levels.values():
+        for viewer in bad_viewers:
+            if viewer in viewers:
+                viewers.remove(viewer)
         for viewer in viewers:
             _set_callback(viewer, viewers)
 
