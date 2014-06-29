@@ -110,6 +110,7 @@ def _extract_viewer_list(viewer):
 
 def _set_callback(node, viewers, knobs=None):
     """Sets the callback on the node with the viewers and knobs args"""
+    viewers = list(viewers)  # Create a copy of list, as we're poppin'
     # Remove our caller from the nodes to update if present.
     if node in viewers:
         viewers.pop(viewers.index(node))
@@ -131,23 +132,24 @@ def _set_callback(node, viewers, knobs=None):
 def remove_callbacks():
     """Removes callback from all selected viewers and all viewers linked."""
     viewers = nuke.selectedNodes('Viewer')
-    extra_viewers = []  # Viewers that weren't in the selected group.
-    bad_viewers = []  # Viewers who have a callback other than viewerSync.
-    for viewer in viewers:
-        try:
-            linked_viewers = _extract_viewer_list(viewer)
-        except ValueError:
-            bad_viewers.append(viewer)
-        else:
-            extra_viewers.extend(linked_viewers)
-
-    viewers.extend(extra_viewers)
 
     if not viewers:
         viewers = nuke.allNodes('Viewer')
+    else:
+        extra_viewers = []  # Viewers that weren't in the selected group.
+        for viewer in viewers:
+            try:
+                linked_viewers = _extract_viewer_list(viewer)
+            except ValueError:
+                pass
+            else:
+                extra_viewers.extend(linked_viewers)
+
+        viewers.extend(extra_viewers)
 
     for viewer in viewers:
-        viewer['knobChanged'].setValue('')
+        if 'viewerSync' in viewer['knobChanged'].value():
+            viewer['knobChanged'].setValue('')
 
 # =============================================================================
 
@@ -196,8 +198,7 @@ def setup_sync():
                 remove_viewers.extend(linked_viewers)
 
     if remove_viewers:
-        for viewer_name in set(remove_viewers):
-            viewer = nuke.toNode(viewer_name)
+        for viewer in set(remove_viewers):
             viewer['knobChanged'].setValue('')
 
     for viewers in viewer_levels.values():
@@ -254,8 +255,6 @@ def sync_viewers(viewers):
 
     # Update remaining viewers to point at our current node.
     for viewer in viewer_nodes:
-        #viewer.setInput(0, current_node)
-        #viewer.setInput(active_view_input, current_node)
         for i in xrange(caller.inputs()):
             viewer.setInput(i, caller.input(i))
         for knob in sync_knobs:
