@@ -408,6 +408,13 @@ def sync_viewers(viewers):
         nuke.toNode(viewer) for viewer in viewers if nuke.toNode(viewer)
     ]
 
+    for viewer in list(viewer_nodes):
+        if not viewer['knobChanged'].value():
+            # Somehow our callback got removed, we'll remove the knobs but
+            # otherwise let the call proceed.
+            _remove_knobs(viewer)
+            viewer_nodes.remove(viewer)
+
     if caller_knob in VIEWER_SYNC_KNOBS:
         # Sync setting and continue
         _sync_knob(caller, viewer_nodes, caller_knob)
