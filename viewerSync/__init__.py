@@ -198,7 +198,7 @@ def run(menu='Viewer', hotkey='j', submenu=None, submenu_index=None,
 
     dest_menu.addCommand(
         'Create Viewer Sync',
-        'viewerSync.toggle()',
+        'viewerSync.setup_sync()',
         hotkey,
         index=item_index if item_index is not None else
         _get_menu_item_index(dest_menu, 'Create Viewer Sync')
