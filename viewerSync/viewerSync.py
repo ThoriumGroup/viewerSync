@@ -56,6 +56,104 @@ except ImportError:
     pass
 
 # =============================================================================
+# GLOBALS
+# =============================================================================
+
+KNOB_TITLES = {
+    'channels': 'channels',
+    'cliptest': 'zebra-stripe',
+    'downrez': 'proxy settings',
+    'format_center': 'format center',
+    'gain': 'gain',
+    'gamma': 'gamma',
+    'masking_mode': 'masking mode',
+    'masking_ratio': 'masking ratio',
+    'overscan': 'overscan',
+    'ignore_pixel_aspect': 'ignore pixel aspect ratio',
+    'input_number': 'viewed input',
+    'input_process': 'input process on/off',
+    'input_process_node': 'input process node',
+    'inputs': 'input nodes',
+    'rgb_only': 'LUT applies to rgb channels only',
+    'roi': 'roi',
+    'safe_zone': 'safe zone',
+    'show_overscan': 'show overscan',
+    'viewerInputOrder': 'input process order',
+    'viewerProcess': 'LUT',
+    'zoom_lock': 'zoom lock'
+}
+
+KNOB_TOOLTIPS = {
+    'channels': 'Sync the layers and alpha channel to display in the viewers. '
+                'The "display style" is not synced.',
+    'cliptest': 'Sync if zebra-striping is enabled or not between viewers.',
+    'downrez': 'Sync the scale down factor for proxy mode. Proxy mode '
+               'activation is always synced.',
+    'format_center': 'Sync if a crosshair is displayed at the center of the '
+                     'viewer window.',
+    'gain': 'Sync the gain slider between viewers.',
+    'gamma': 'Sync the gamma slider between viewers.',
+    'masking_mode': 'Sync the mask style between viewers.',
+    'masking_ratio': 'Sync the mask ratio selection between viewers.',
+    'overscan': 'Sync the amount of overscan displayed between viewers.',
+    'ignore_pixel_aspect': 'If selected all viewers will either show square '
+                           'pixels or the pixel aspect ratio denoted by '
+                           'the format.',
+    'input_number': 'Syncs which input number is being viewed between all '
+                    'viewers. This does not mean that all viewers are '
+                    'viewing the same nodes, just that all viewers are '
+                    'viewing input 1, etc.',
+    'input_process': 'If selected all viewers will either have the input '
+                     'process on, or off.',
+    'input_process_node': 'Syncs what node is used as the input process '
+                          'between all viewers.',
+    'inputs': 'If selected, all viewers will point to the same nodes in the '
+              'node graph.',
+    'rgb_only': 'Syncs the "apply LUT to color channels only" knob, which '
+                'indicates that the viewer will attempt to apply the lut to '
+                'only the color channels. This only works with knobs that '
+                'have an "rgb_only" knob, which is few.',
+    'roi': 'Syncs the ROI window between all viewers. ROI needs to be manually '
+           'activated for all viewers.',
+    'safe_zone': 'Syncs the safe zone overlays between all viewers.',
+    'show_overscan': 'If selected, all viewers will either show overscan or '
+                     'not show overscan.',
+    'viewerInputOrder': 'Syncs if the input process occurs before or after '
+                        'the viewer process between all viewers.',
+    'viewerProcess': 'Syncs the LUT between all viewers.',
+    'zoom_lock': 'If selected, the zoom lock will apply to all viewers or '
+                 'none.'
+}
+
+SYNC_DEFAULTS = {
+    'channels': False,
+    'cliptest': True,
+    'downrez': True,
+    'format_center': True,
+    'gain': False,
+    'gamma': False,
+    'masking_mode': True,
+    'masking_ratio': True,
+    'overscan': True,
+    'ignore_pixel_aspect': True,
+    'input_number': True,
+    'input_process': True,
+    'input_process_node': True,
+    'inputs': False,
+    'rgb_only': True,
+    'roi': True,
+    'safe_zone': True,
+    'show_overscan': True,
+    'viewerInputOrder': True,
+    'viewerProcess': True,
+    'zoom_lock': True
+}
+
+VIEWER_SYNC_KNOBS = [
+    'vs_{knob}'.format(knob=sync_knob) for sync_knob in SYNC_DEFAULTS.keys()
+]
+
+# =============================================================================
 # EXPORTS
 # =============================================================================
 
@@ -67,6 +165,55 @@ __all__ = [
 
 # =============================================================================
 # PRIVATE FUNCTIONS
+# =============================================================================
+
+
+def _add_sync_knobs(viewer):
+    """Adds the sync option knobs to the given given viewer node."""
+    if 'vs_options' in viewer.knobs():
+        # This node already has a settings pane.
+        return
+
+    tab = nuke.Tab_Knob('vs_options', 'Viewer Sync')
+    viewer.addKnob(tab)
+
+    def add_knobs(knob_list):
+        """For every knob in the list, adds that knob to the current tab"""
+        for knob in knob_list:
+            new_knob = nuke.Boolean_Knob('vs_' + knob, KNOB_TITLES[knob])
+            new_knob.setTooltip(KNOB_TOOLTIPS[knob])
+            new_knob.setValue(SYNC_DEFAULTS[knob])
+            new_knob.setFlag(nuke.STARTLINE)
+            viewer.addKnob(new_knob)
+
+    input_options = nuke.Text_Knob('vs_input_options', 'Input Options')
+    viewer.addKnob(input_options)
+    add_knobs(['inputs', 'input_number', 'channels'])
+
+    display_options = nuke.Text_Knob('vs_display_options', 'Display Options')
+    viewer.addKnob(display_options)
+    add_knobs(
+        [
+            'viewerProcess', 'rgb_only', 'input_process',
+            'input_process_node', 'viewerInputOrder', 'gain', 'gamma',
+            'ignore_pixel_aspect', 'zoom_lock', 'show_overscan',
+            'overscan'
+        ]
+    )
+
+    overlay_options = nuke.Text_Knob('vs_overlay_options', 'Overlay Options')
+    viewer.addKnob(overlay_options)
+    add_knobs(
+        [
+            'masking_mode', 'masking_ratio', 'safe_zone',
+            'format_center', 'cliptest'
+        ]
+    )
+
+    process_options = nuke.Text_Knob('vs_process_options', 'Processing Options')
+    viewer.addKnob(process_options)
+    add_knobs(['downrez', 'roi'])
+
 # =============================================================================
 
 
@@ -108,7 +255,27 @@ def _extract_viewer_list(viewer):
 # =============================================================================
 
 
-def _set_callback(node, viewers, knobs=None):
+def _remove_knobs(viewer):
+    """Removes all viewerSync knobs from a viewer"""
+    for knob in viewer.knobs():
+        if knob.startswith('vs_'):
+            viewer.removeKnob(viewer[knob])
+    # It's unlikely that the tab knob was deleted at first.
+    if 'vs_options' in viewer.knobs():
+        viewer.removeKnob(viewer['vs_options'])
+
+# =============================================================================
+
+
+def _sync_knob(source, targets, knob):
+    """Syncs a knob setting from the source to the target"""
+    for target in targets:
+        target[knob].setValue(source[knob].value())
+
+# =============================================================================
+
+
+def _set_callback(node, viewers):
     """Sets the callback on the node with the viewers and knobs args"""
     viewers = list(viewers)  # Create a copy of list, as we're poppin'
     # Remove our caller from the nodes to update if present.
@@ -150,6 +317,7 @@ def remove_callbacks():
     for viewer in viewers:
         if 'viewerSync' in viewer['knobChanged'].value():
             viewer['knobChanged'].setValue('')
+        _remove_knobs(viewer)
 
 # =============================================================================
 
@@ -169,6 +337,12 @@ def setup_sync():
 
     if viewers:
         for viewer in viewers:
+            # If this node was already setup as a sync, we'll remove the
+            # sync settings knobs.
+            _remove_knobs(viewer)
+            # In case Nuke returns us viewers split across different levels,
+            # we'll need to split them up by level so that we don't
+            # attempt to link those.
             group = '.'.join(viewer.fullName().split('.')[:-1])
             if not group:
                 group = 'root'
@@ -200,12 +374,14 @@ def setup_sync():
     if remove_viewers:
         for viewer in set(remove_viewers):
             viewer['knobChanged'].setValue('')
+            _remove_knobs(viewer)
 
     for viewers in viewer_levels.values():
         for viewer in bad_viewers:
             if viewer in viewers:
                 viewers.remove(viewer)
         for viewer in viewers:
+            _add_sync_knobs(viewer)
             _set_callback(viewer, viewers)
 
 # =============================================================================
@@ -213,49 +389,44 @@ def setup_sync():
 
 def sync_viewers(viewers):
 
-    sync_knobs = [
-        'channels',
-        'cliptest',
-        'downrez',  # Proxy Mode
-        'fps',
-        'gain',
-        'gamma',
-        'input_number',  # What input we're looking at
-        'input_process',
-        'input_process_node',
-        'masking_mode',
-        'masking_ratio',
-        'rgb_only',
-        'roi',  # Doesn't work 100% yet.
-        'safe_zone',
-        'viewerProcess'
-    ]
-
-    # Kick back if it's not a knob we care about.
-    if nuke.thisKnob().name() not in (
-        sync_knobs + ['inputChange', 'knobChanged']
-    ):
-        return
-
     caller = nuke.thisNode()
+    caller_knob = nuke.thisKnob().name()
+
+    # We need to check what knob is calling us first- if that knob isn't a
+    # syncing knob, we'll return.
+    if caller_knob not in ['inputChange', 'knobChanged']:
+        if caller_knob not in SYNC_DEFAULTS.keys() + VIEWER_SYNC_KNOBS:
+            return
+
+        if caller_knob not in VIEWER_SYNC_KNOBS:
+            if not caller['vs_{knob}'.format(knob=caller_knob)].value():
+                # Sync setting is false for this knob
+                return
 
     # Grab our viewer nodes and remove any that have been deleted.
     viewer_nodes = [
         nuke.toNode(viewer) for viewer in viewers if nuke.toNode(viewer)
     ]
 
-    if len(viewer_nodes) != len(viewers):
-        # Some or all of the linked viewer nodes have been deleted.
-        _set_callback(caller, viewer_nodes)
-    elif not viewer_nodes:
-        # All linked viewers have been deleted.
-        # We should remove the callback.
-        caller['knobChanged'].setValue('')
+    if caller_knob in VIEWER_SYNC_KNOBS:
+        # Sync setting and continue
+        _sync_knob(caller, viewer_nodes, caller_knob)
+        if caller[caller_knob].value():
+            caller_knob = caller_knob.replace('vs_', '')
+
+    if caller_knob in ['inputChange', 'inputs']:
+        if caller['vs_inputs'].value():
+            for viewer in viewer_nodes:
+                for i in xrange(caller.inputs()):
+                    viewer.setInput(i, caller.input(i))
         return
+    elif caller_knob == 'knobChanged':
+        knob_list = [
+            knob for knob in SYNC_DEFAULTS.keys() if SYNC_DEFAULTS[knob]
+        ]
+    else:
+        knob_list = [caller_knob]
 
     # Update remaining viewers to point at our current node.
-    for viewer in viewer_nodes:
-        for i in xrange(caller.inputs()):
-            viewer.setInput(i, caller.input(i))
-        for knob in sync_knobs:
-            viewer[knob].setValue(caller[knob].value())
+    for knob in knob_list:
+        _sync_knob(caller, viewer_nodes, knob)
