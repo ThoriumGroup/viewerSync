@@ -171,7 +171,10 @@ __all__ = [
 def _add_sync_knobs(viewer):
     """Adds the sync option knobs to the given given viewer node."""
     if 'vs_options' in viewer.knobs():
-        # This node already has a settings pane.
+        # This node already has a settings pane- we'll reset the settings to
+        # default.
+        for knob in SYNC_DEFAULTS:
+            viewer['vs_' + knob].setValue(SYNC_DEFAULTS[knob])
         return
 
     tab = nuke.Tab_Knob('vs_options', 'Viewer Sync')
@@ -270,7 +273,11 @@ def _remove_knobs(viewer):
 def _sync_knob(source, targets, knob):
     """Syncs a knob setting from the source to the target"""
     for target in targets:
-        target[knob].setValue(source[knob].value())
+        try:
+            target[knob].setValue(source[knob].value())
+        except NameError:
+            # Knob doesn't exist on target.
+            continue
 
 # =============================================================================
 
@@ -337,9 +344,6 @@ def setup_sync():
 
     if viewers:
         for viewer in viewers:
-            # If this node was already setup as a sync, we'll remove the
-            # sync settings knobs.
-            _remove_knobs(viewer)
             # In case Nuke returns us viewers split across different levels,
             # we'll need to split them up by level so that we don't
             # attempt to link those.
@@ -370,6 +374,17 @@ def setup_sync():
                 bad_viewers.append(viewer)
             else:
                 remove_viewers.extend(linked_viewers)
+
+    for rm_viewer in list(remove_viewers):
+        for viewers in viewer_levels.values():
+            if rm_viewer in viewers:
+                remove_viewers.remove(rm_viewer)
+        if rm_viewer in bad_viewers:
+            try:
+                remove_viewers.remove(rm_viewer)
+            except ValueError:
+                # We probably already removed this viewer above.
+                pass
 
     if remove_viewers:
         for viewer in set(remove_viewers):
@@ -407,13 +422,6 @@ def sync_viewers(viewers):
     viewer_nodes = [
         nuke.toNode(viewer) for viewer in viewers if nuke.toNode(viewer)
     ]
-
-    for viewer in list(viewer_nodes):
-        if not viewer['knobChanged'].value():
-            # Somehow our callback got removed, we'll remove the knobs but
-            # otherwise let the call proceed.
-            _remove_knobs(viewer)
-            viewer_nodes.remove(viewer)
 
     if caller_knob in VIEWER_SYNC_KNOBS:
         # Sync setting and continue
