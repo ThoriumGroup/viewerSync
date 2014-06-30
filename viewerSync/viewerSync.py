@@ -8,12 +8,14 @@ Contains the functions required for two views to be kept in sync.
 
 ## Public Functions
 
-    sync_viewers()
-        Syncs the inputs of one or more viewers to match the input list
-        of the calling node.
+    remove_callback()
+        Removes callback from all selected viewers and all viewers linked.
 
-    toggle()
-        Toggles the callback args of selected viewers or all viewers in root.
+    setup_sync()
+        Sets up a viewerSync between a group of Viewer nodes.
+
+    sync_viewers()
+        Syncs all the given viewers to the settings on the caller node.
 
 ## License
 
@@ -59,6 +61,8 @@ except ImportError:
 # GLOBALS
 # =============================================================================
 
+# The specific text to display on the viewerSync knob for the listed
+# viewer knob.
 KNOB_TITLES = {
     'channels': 'channels',
     'cliptest': 'zebra-stripe',
@@ -83,6 +87,8 @@ KNOB_TITLES = {
     'zoom_lock': 'zoom lock'
 }
 
+# These are tooltips for the viewerSync knobs, with the keys being the normal
+# knob the viewerSync knob refers to.
 KNOB_TOOLTIPS = {
     'channels': 'Sync the layers and alpha channel to display in the viewers. '
                 'The "display style" is not synced.',
@@ -125,6 +131,8 @@ KNOB_TOOLTIPS = {
                  'none.'
 }
 
+# The default values for a fresh viewerSync. Ideally these would be read from
+# a savable config file.
 SYNC_DEFAULTS = {
     'channels': False,
     'cliptest': True,
@@ -149,6 +157,9 @@ SYNC_DEFAULTS = {
     'zoom_lock': True
 }
 
+# List all viewerSync specific knobs.
+# These knobs contain the bool values specifying if a normal viewer knob
+# should be synced or not.
 VIEWER_SYNC_KNOBS = [
     'vs_{knob}'.format(knob=sync_knob) for sync_knob in SYNC_DEFAULTS.keys()
 ]
@@ -169,7 +180,22 @@ __all__ = [
 
 
 def _add_sync_knobs(viewer):
-    """Adds the sync option knobs to the given given viewer node."""
+    """Adds the sync option knobs to the given given viewer node.
+
+    If this gets called on a node that already has viewerSync knobs, those
+    knobs will sync instead of being added again.
+
+    Args:
+        viewer : (<nuke.nodes.Viewer>)
+            The Viewer node to add viewerSync knobs to.
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
     if 'vs_options' in viewer.knobs():
         # This node already has a settings pane- we'll reset the settings to
         # default.
@@ -259,7 +285,24 @@ def _extract_viewer_list(viewer):
 
 
 def _remove_knobs(viewer):
-    """Removes all viewerSync knobs from a viewer"""
+    """Removes all viewerSync knobs from a viewer.
+
+    Since this function only deletes knobs that begin with `vs_`, it should
+    not raise any exceptions due to missing nodes. One should be able
+    to run this on a Viewer- or any node for that matter- with no viewerSync
+    knobs on it whatsoever and not raise any errors.
+
+    Args:
+        viewer : (<nuke.nodes.Viewer>)
+            The viewer node with the viewerSync knobs on it.
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
     for knob in viewer.knobs():
         if knob.startswith('vs_'):
             viewer.removeKnob(viewer[knob])
@@ -271,7 +314,28 @@ def _remove_knobs(viewer):
 
 
 def _sync_knob(source, targets, knob):
-    """Syncs a knob setting from the source to the target"""
+    """Syncs a knob setting from the source to the target.
+
+    Args:
+        source : (<nuke.Node>)
+            Any node that has a knob with a value we want to sync from.
+
+        targets : [<nuke.Node>]
+            A list of nodes that should have the same knob as source, that we
+            want to have the same value as source. The call to these nodes
+            and knobs is protected by a try/except, so even if the knob is
+            missing it should resolve without error.
+
+        knob : (str)
+            The knob name to match between the source and the targets.
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
     for target in targets:
         try:
             target[knob].setValue(source[knob].value())
@@ -283,8 +347,24 @@ def _sync_knob(source, targets, knob):
 
 
 def _set_callback(node, viewers):
-    """Sets the callback on the node with the viewers and knobs args"""
-    viewers = list(viewers)  # Create a copy of list, as we're poppin'
+    """Sets the callback on the node with the viewers and knobs args.
+
+    Args:
+        node : (<nuke.nodes.Viewer>)
+            The viewer node we're going to set the callback on.
+
+        viewers : [<nuke.nodes.Viewer>]
+            The viewers the callback should reference.
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
+    # Create a copy of list, as we're poppin' the `node` if found.
+    viewers = list(viewers)
     # Remove our caller from the nodes to update if present.
     if node in viewers:
         viewers.pop(viewers.index(node))
@@ -304,7 +384,22 @@ def _set_callback(node, viewers):
 
 
 def remove_callbacks():
-    """Removes callback from all selected viewers and all viewers linked."""
+    """Removes callback from all selected viewers and all viewers linked.
+
+    Checks to make sure that the callback present is a viewerSync callback
+    before we remove the callback, this prevents us from interfering with
+    another tool.
+
+    Args:
+        N/A
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
     viewers = nuke.selectedNodes('Viewer')
 
     if not viewers:
@@ -330,6 +425,29 @@ def remove_callbacks():
 
 
 def setup_sync():
+    """Sets up a viewerSync between a group of Viewer nodes.
+
+    This sets up callbacks between either all selected viewers, or all viewers
+    at the current node graph level (as defined by what nuke.allNodes()
+    returns). It also sets up a series of settings on the Viewer nodes
+    themselves, controlling which knobs get synced between the Viewers.
+
+    Before setting up the viewers, we check the current knobChanged value.
+    Often that value is a viewerSync callback already. If so, we deactivate
+    that viewerSync group before continuing. If the callback is foreign (not
+    a viewerSync callback), we leave it alone and remove that Viewer from the
+    viewerSync group, rather than mess up another python process.
+
+    Args:
+        N/A
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
     # Grab all of our currently selected Viewer nodes:
     viewers = nuke.selectedNodes('Viewer')
 
@@ -403,6 +521,29 @@ def setup_sync():
 
 
 def sync_viewers(viewers):
+    """Syncs all the given viewers to the settings on the caller node.
+
+    This is the primary callback for viewerSync. Through it, the actual sync
+    happens. Before the callback executes, we compare the calling knob to a
+    list of knobs that viewerSync is concerned about. If the caller knob isn't
+    on the white-list, or the calling knob isn't currently set to sync (via the
+    caller node's settings) we return early.
+
+    Otherwise we sync the knob values for the knob that called us.
+
+    Args:
+        viewers : [str]
+            This list of absolute viewer names will be resolved into
+            <nuke.nodes.Viewer>s, which will be synced to the caller
+            node's knob values.
+
+    Returns:
+        None
+
+    Raises:
+        N/A
+
+    """
 
     caller = nuke.thisNode()
     caller_knob = nuke.thisKnob().name()
