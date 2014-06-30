@@ -8,7 +8,7 @@ Synchronizes two or more viewers in Nuke so that they always show the same node.
 
 ## Usage
 
-Synchronizing viewers in nuke is as easy as hitting `j` with two or more
+Synchronizing viewers in nuke is as easy as hitting `Shift+j` with two or more
 viewers selected. If no viewers are selected, all viewers on the root node
 graph level are synchronized.
 
@@ -16,9 +16,9 @@ From that point on, whenever you switch an input on one viewer, the other
 viewers will switch to the same input.
 
 To remove the synchronization from nodes, select the nodes you wish to remove
-synchronization from, and hit `Shift-j`. If no nodes are selected, all the
-viewers found on the root node graph level are de-synced. Note that any viewers
-that are in the same group
+synchronization from, and select 'Remove Viewer Sync'. If no nodes are
+selected, all the viewers found on the root node graph level are de-synced.
+Note that any viewers that are in the same group
 
 ## Installation
 
@@ -140,7 +140,7 @@ def _get_menu_item_index(menu, item):
 # ==============================================================================
 
 
-def run(menu='Viewer', hotkey='j', submenu=None, submenu_index=None,
+def run(menu='Viewer', hotkey='Shift+j', submenu=None, submenu_index=None,
         item_index=-1):
     """Adds viewerSync menu items.
 
@@ -149,7 +149,7 @@ def run(menu='Viewer', hotkey='j', submenu=None, submenu_index=None,
             Top menu to add viewerSync under. Defaults to adding it under
             the built in 'Viewer' menu.
 
-        hotkey='j' : (str)
+        hotkey='Shift+j' : (str)
             The hotkey to trigger viewerSync.
 
         submenu=None : (str)
@@ -207,7 +207,6 @@ def run(menu='Viewer', hotkey='j', submenu=None, submenu_index=None,
     dest_menu.addCommand(
         'Remove Viewer Sync',
         'viewerSync.remove_callbacks()',
-        'Shift+' + hotkey,
         index=item_index if item_index is not None else
         _get_menu_item_index(dest_menu, 'Remove Viewer Sync')
     )
