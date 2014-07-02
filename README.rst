@@ -18,8 +18,11 @@ Synchronizing viewers in nuke is as easy as hitting `Shift+j` with two or more
 viewers selected. If no viewers are selected, all viewers on the root node
 graph level are synchronized.
 
-From that point on, whenever you switch an input on one viewer, the other
-viewers will switch to the same input.
+From that point on, certain designated settings are synced between those
+viewers whenever you change one of those settings on either one. Those settings
+are selectable from a new 'Viewer Sync' tab in the Viewer settings. You can
+choose to sync channels, inputs, viewed input number, luts, input processes,
+color corrections, overlays, rois, and more.
 
 To remove the synchronization from nodes, select the nodes you wish to remove
 synchronization from, and select 'Remove Viewer Sync'. If no nodes are
