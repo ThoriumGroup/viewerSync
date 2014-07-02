@@ -56,7 +56,7 @@ License
 The MIT License (MIT)
 
     viewerSync
-    Copyright (c) 2011-2012 Philippe Huberdeau
+    Copyright (c) 2011-2014 Philippe Huberdeau and Sean Wallitsch
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
