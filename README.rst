@@ -22,7 +22,7 @@ From that point on, certain designated settings are synced between those
 viewers whenever you change one of those settings on either one. Those settings
 are selectable from a new 'Viewer Sync' tab in the Viewer settings. You can
 choose to sync channels, inputs, viewed input number, luts, input processes,
-color corrections, overlays, rois, and more.
+color corrections, overlays, ROI, and more.
 
 To remove the synchronization from nodes, select the nodes you wish to remove
 synchronization from, and select 'Remove Viewer Sync'. If no nodes are
@@ -48,10 +48,24 @@ Changelog
 *New in version 2.0*
 
 - Refactoring
-- Now only one menu command, activated with `Shift-j`
 - Now sync more than 2 viewers together- sync as many viewers as you want.
+- Adds two menu options to the 'Viewer' menu:
+    - 'Create Viewer Sync' (hotkey: `Shift-j`)
+    - 'Remove Viewer Sync' (no hotkey)
 - Sync viewers by selecting them and then hitting `Shift-j`.
 - Hitting `Shift-j` with no selection causes all viewers on the same DAG level to sync.
+- Adds way more sync possibilities:
+    - Sync channels
+    - Sync inputs
+    - Sync viewed input
+    - Sync LUT
+    - Sync input processes
+    - Sync gain & gamma
+    - Sync overlays
+    - Sync ROI
+    - Many more
+- Choose between those possibilities from a new 'Viewer Sync' tab in the normal Viewer settings panel.
+- Many bugs squashed.
 
 License
 -------
